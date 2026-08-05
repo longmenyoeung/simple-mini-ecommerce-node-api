@@ -86,6 +86,7 @@ export const updateReview = async (req, res) => {
 
         const validated = {
             product_id,
+            user_id,
             rating,
             text_comment,
         };
@@ -93,6 +94,11 @@ export const updateReview = async (req, res) => {
         const product = await ProductModel.findById(product_id);
         if (!product) {
             return res.status(400).json({ message: "Make sure product is invalid." });
+        }
+
+        const user  = await UserModel.findById(user_id);
+        if(!user) {
+            return res.status(400).json({ message: "Make sure user is invalid." });
         }
 
         const review = await ReviewModel.findByIdAndUpdate(
