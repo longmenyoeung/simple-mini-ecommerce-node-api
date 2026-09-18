@@ -1,15 +1,37 @@
 import UserModel from "../models/UserModel.js";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
-const createUser = async (req, res) => {
+
+const register = async (req, res) => {
     try {
-        const { name, email, age } = req.body;
-        const user = await UserModel.create({ name, email, age });
+        const { name, email, password, role} = req.body;
+        
+        const existed = await UserModel.findOne({email});
+        if(existed){
+            return res.status(400).json({message: "email is already existed."});
+        }
+
+        //can create only admin
+        if(role === "admin"){
+            const adminExitsted = await UserModel.findOne({role:"admin"});
+            if(adminExitsted){return res.status(400).json({message: "Something went wrong. please try again."})}
+        }
+
+        
+        const passwordHashed = await bcrypt.hash(password, 10);
+        const user = await UserModel.create({ name, email, password:passwordHashed ,});
+
+        const userRespone = user.toObject();
+        delete userRespone.password;
+        delete userRespone.role;
 
         return res.status(201).json({
             success: true,
             message: "User created.",
-            data: user
+            data: userRespone
         });
+
     } catch (error) {
         return res.status(500).json({
             message : 'Server interl error',
@@ -18,18 +40,64 @@ const createUser = async (req, res) => {
     }
 }
 
-const getlistUser = async (req, res) => {
+
+const login = async (req, res) => {
     try {
-        const users = await UserModel.find({});
-        if(users.length === 0) {
-            return res.status(400).json({message: 'User is emtpy.'});
-        }
+
+        const {email, password} = req.body;
+
+        //find email
+        const user = await UserModel.findOne({email});
+        if(!user){return res.status(404).json({message: "email or passowrd incorrect."})}
+
+        //comparing password
+        const passwordCompare = await bcrypt.compare(password, user.password);
+        if(!passwordCompare){return res.status(404).json({message: "email or password incorrect."})}
+
+        //generate token
+        const accessToken = jwt.sign(
+            {
+                sub:user._id,
+                email:user.email
+            },
+
+            process.env.SECRET_JWT,
+            {
+                expiresIn: '1h'
+            }
+        )
+
 
         return res.status(200).json({
             success: true,
-            message : 'Get list users successfully.',
-            total_users : users.length,
-            data : users
+            token: accessToken
+        })
+        
+    } catch (error) {
+        return res.json(error.message);
+    }
+}
+
+
+const getlistUser = async (req, res) => {
+    try {
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const  users = await UserModel.paginate(
+            {},
+            {
+                page,
+                limit,
+                select: "-password -role"
+            }
+        )
+
+
+        return res.status(200).json({
+            success: true,
+            ...users
         });
 
     } catch (error) {
@@ -93,7 +161,8 @@ const deleteUser = async (req, res) => {
 }
 
 export {
-    createUser,
+    register,
+    login,
     getlistUser,
     searchUserById,
     updateUser,

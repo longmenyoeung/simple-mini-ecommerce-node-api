@@ -1,4 +1,4 @@
-import { data } from "react-router-dom";
+
 import CategoryModel from "../models/CategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
 
