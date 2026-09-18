@@ -122,26 +122,47 @@ const searchUserById = async (req, res) => {
     }
 }
 
-const updateUser = async (req, res) => {
+const updateCurrectUser = async (req, res) => {
     try {
-        const user = await UserModel.findByIdAndUpdate(
-            req.params.userId,
-            req.body,
-            {
-                new : true,
-                runValidators: true
-            }
-        );
 
-        if(!user) {return res.status(404).json({message: 'User not found.'});}
+        const {name, email, password, profile} = req.body;
+        const validated = {name, email, password, profile};
+        const userId = req.params.userId;
+        const user = await UserModel.findById(userId).select('-password');
 
-        return res.status(200).json({
-            success: true,
-            message: 'User updated successfully.',
-            data : user
-        });
+        if(!user){return res.status(404).json({message:"User not found."})}
+
+        if(user._id.toString() === req.user._id.toString() || req.user.role === 'admin'){
+
+
+            const existed = await UserModel.findOne({email});
+            if(existed){return res.status(400).json({message:"Email already existed."})}
+
+            const updateUser = await UserModel.findByIdAndUpdate(
+                userId,validated,{
+                    new:true,
+                    runValidators: true
+                }
+            )
+
+
+            const respone  = updateUser.toObject();
+            delete respone.password;
+            delete respone.role;
+
+            return res.status(200).json({
+                success: true,
+                message: "User updated successfully.",
+                user:respone
+            })
+
+        }else{
+            return res.status(403).json({message: "Forbidden: You are not owner of this account."})
+        }
+
+
     } catch (error) {
-        return res.status(500).json({message: 'Server internal error', error:error.message});
+        return res.status(500).json(error.message);
     }
 }
 
@@ -165,6 +186,6 @@ export {
     login,
     getlistUser,
     searchUserById,
-    updateUser,
+    updateCurrectUser,
     deleteUser
 }

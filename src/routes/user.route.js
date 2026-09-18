@@ -4,9 +4,10 @@ import {
     deleteUser,
     getlistUser,
     searchUserById,
-    updateUser,
+    updateCurrectUser,
     login,
 } from "../controllers/user.controller.js";
+import { authJwt } from "../middleware/AuthMiddleware.js";
 
 const userRoute = express.Router();
 
@@ -15,9 +16,9 @@ userRoute.post('/login', login);
 
 
 
-userRoute.get("/:userId", searchUserById);
-userRoute.get("/", getlistUser);
-userRoute.put("/:userId", updateUser);
-userRoute.delete("/:userId", deleteUser);
+userRoute.get("/:userId",authJwt, searchUserById);
+userRoute.get("/",authJwt, getlistUser);
+userRoute.put("/:userId",authJwt, updateCurrectUser);
+userRoute.delete("/:userId",authJwt, deleteUser);
 
 export default userRoute;
