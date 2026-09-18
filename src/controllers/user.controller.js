@@ -40,7 +40,6 @@ const register = async (req, res) => {
     }
 }
 
-
 const login = async (req, res) => {
     try {
 
@@ -53,6 +52,10 @@ const login = async (req, res) => {
         //comparing password
         const passwordCompare = await bcrypt.compare(password, user.password);
         if(!passwordCompare){return res.status(404).json({message: "email or password incorrect."})}
+
+        //if account isActive : false
+        const accountIsActive = await UserModel.findOne({isActive:false});
+        if(accountIsActive){return res.status(400).json({message: "Account has been deactivated. please contact to support."})}
 
         //generate token
         const accessToken = jwt.sign(
@@ -67,7 +70,6 @@ const login = async (req, res) => {
             }
         )
 
-
         return res.status(200).json({
             success: true,
             token: accessToken
@@ -77,7 +79,6 @@ const login = async (req, res) => {
         return res.json(error.message);
     }
 }
-
 
 const getlistUser = async (req, res) => {
     try {
