@@ -16,6 +16,14 @@ export const getlistProduct = async (req, res) => {
             sortOption = {price: 1}
         }
 
+        //Filter product newest or oldest
+        if(sort === "newest"){
+            sortOption = {createdAt: -1}
+        }
+        if(sort === "oldest"){
+            sortOption = {createdAt: 1}
+        }
+
         //filter exactly price
         const price = Number(req.query.price);
         if(price){ query.price = price};
@@ -31,9 +39,9 @@ export const getlistProduct = async (req, res) => {
         }
 
         //filter exactly stock
-        const stock = Number(req.query.stock);
-        if(stock) query.stock = stock;
-
+        if(req.query.isStock === "true") {
+            query.stock = {$gt:0}
+        }
         //Search name
         if(search){
             query.name = {
