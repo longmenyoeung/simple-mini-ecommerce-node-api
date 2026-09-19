@@ -198,7 +198,7 @@ const deleteUser = async (req, res) => {
         delete respone.password;
         delete respone.role;
 
-        return res.status({
+        return res.status(200).json({
             success: true,
             message: "User deleted successfully.",
             user: respone._id
