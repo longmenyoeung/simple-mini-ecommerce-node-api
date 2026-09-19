@@ -1,6 +1,7 @@
 import UserModel from "../models/UserModel.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import mongoose from "mongoose";
 
 
 const register = async (req, res) => {
@@ -129,7 +130,7 @@ const updateCurrectUser = async (req, res) => {
         const {name, email, password, profile} = req.body;
         const validated = {name, email, password, profile};
         const userId = req.params.userId;
-        const user = await UserModel.findById(userId).select('-password');
+        const user = await UserModel.findById(userId);
 
         if(!user){return res.status(404).json({message:"User not found."})}
 
@@ -168,18 +169,45 @@ const updateCurrectUser = async (req, res) => {
 }
 
 const deleteUser = async (req, res) => {
-    const userId = req.params.userId;
-    const user = await UserModel.findByIdAndDelete(userId);
+   try {
+        const userId = req.params.userId;
+        
+        //1.checking ID format.
+        if(!mongoose.Types.ObjectId.isValid(userId)){return res.status(400).json({message:"Invalid ID format provided."})}
 
-    if(!user) {
-        return res.status(404).json({message: 'User not found.'});
-    }
+        //2.finding user
+        const user = await UserModel.findById(userId)
 
-    return res.status(200).json({
-        success: true,
-        message : 'User deleted successfully.',
-        data: user
-    });
+        //3.checking whether the user is found or not.
+        if(!user){return res.status(404).json({message: "User not found."})}
+
+        //4. check authorize before modify db
+        const isOwner = user._id.toString() === req.user._id.toString();
+        const isAdmin = req.user.role === "admin";
+
+        if(!isOwner && !isAdmin) {
+            return res.status(403).json({message: "Forbidden: You are not allowed delete this account."})
+        }
+
+        //soft delete
+        user.isActive = false,
+        await user.save();
+
+        //hidden role and pass
+        const respone = user.toObject();
+        delete respone.password;
+        delete respone.role;
+
+        return res.status({
+            success: true,
+            message: "User deleted successfully.",
+            user: respone._id
+        });
+
+   } catch (error) {
+        return res.json(error.message)
+   }
+    
 }
 
 export {
