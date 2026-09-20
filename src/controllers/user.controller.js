@@ -21,7 +21,7 @@ const register = async (req, res) => {
 
         
         const passwordHashed = await bcrypt.hash(password, 10);
-        const user = await UserModel.create({ name, email, password:passwordHashed ,});
+        const user = await UserModel.create({ name, email, password:passwordHashed ,role});
 
         const userRespone = user.toObject();
         delete userRespone.password;

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import CategoryModel from "../models/CategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
 
@@ -9,7 +10,7 @@ export const create = async (req, res) => {
         const categoryExisted = await CategoryModel.findOne({name});
         if(categoryExisted){return res.status(400).json({message: "Category name already existed."})}
 
-        const category = await CategoryModel.create(name, description);
+        const category = await CategoryModel.create({name, description});
 
         return res.status(201).json({
             succcess: true, 
@@ -21,9 +22,6 @@ export const create = async (req, res) => {
         return res.json(error.message)
     }
 }
-
-
-
 
 
 export const getlist = async (req, res) => {
@@ -74,25 +72,35 @@ export const getlist = async (req, res) => {
 
 export const update = async (req, res) => {
     try {
+        const {name, description, isActive}  = req.body;
+        const {id} = req.params;
+        const validated = {name, description, isActive};
+
+
+        if(!mongoose.Types.ObjectId.isValid(id)){return res.status(400).json({message: "Invalid ID format."})}
+
+        const category = await CategoryModel.findOne({name:validated.name});
+        if(category) {return res.status(400).json({message: "Category name already existed."})}
+
+
         const result = await CategoryModel.findByIdAndUpdate(
-            req.params.id,
-            req.body,
+            id,
+            validated,
             {
                 new : true,
                 runValidators : true
             }
         );
         if(!result) {return res.status(404).json({message: 'Category not found.'})}
+
+
         return res.status(200).json({
             success: true,
             message :' Category updated successfully.',
             data : result
         })
     } catch (error) {
-        return res.status(500).json({
-            message: ' Server internal error',
-            error: error.message
-        });
+        return res.json(error.message);
     }
 }
 
