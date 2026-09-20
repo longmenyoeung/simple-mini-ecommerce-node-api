@@ -9,6 +9,7 @@ import categoryRoute from './routes/category.route.js';
 import productRoute from './routes/product.route.js';
 import reviewRoute from './routes/review.route.js';
 import { authJwt } from './middleware/AuthMiddleware.js';
+import errorHandler from './middleware/ErrorHandler.js';
 
 
 //middleware
@@ -23,7 +24,13 @@ app.use(morgan('combined'));
 app.use('/api/users', userRoute);
 app.use('/api/categories',authJwt, categoryRoute);
 app.use('/api/products',authJwt, productRoute);
-app.use('/api/reviews',authJwt, reviewRoute)
+app.use('/api/reviews',authJwt, reviewRoute);
+
+
+
+
+//error handler
+app.use(errorHandler);
 
 export default app;
 
