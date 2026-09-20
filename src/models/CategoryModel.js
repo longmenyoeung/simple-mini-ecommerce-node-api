@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import paginate  from "mongoose-paginate-v2";
 
 const categorySchema = new mongoose.Schema({
     name : {
@@ -6,6 +7,14 @@ const categorySchema = new mongoose.Schema({
         required: true,
         trim : true,
         unique : true
+    },
+    description: {
+        type:String,
+        max: 500
+    },
+    avata: {
+        type: String,
+        default: null
     },
     isActive : {
         type: Boolean,
@@ -15,6 +24,6 @@ const categorySchema = new mongoose.Schema({
     timestamps :true,
     collection : 'categories'
 });
-
+categorySchema.plugin(paginate)
 const CategoryModel = mongoose.model('Category', categorySchema);
 export default CategoryModel;

@@ -1,57 +1,76 @@
 import CategoryModel from "../models/CategoryModel.js";
+import ProductModel from "../models/ProductModel.js";
 
 
 export const create = async (req, res) => {
     try {
-        const {name} = req.body;
+        const {name, description} = req.body;
 
-        const category = new CategoryModel({name});
-        await category.save();
+        const categoryExisted = await CategoryModel.findOne({name});
+        if(categoryExisted){return res.status(400).json({message: "Category name already existed."})}
+
+        const category = await CategoryModel.create(name, description);
 
         return res.status(201).json({
-            success : true,
-            message: 'Category created successfully.',
-            data : category
-        })
-    } catch (error) {
-        return res.status(500).json({
-            message: 'Server internal error',
+            succcess: true, 
+            message: "Category created successfully.",
+            category : category
         });
+
+    } catch (error) {
+        return res.json(error.message)
     }
 }
+
+
+
+
 
 export const getlist = async (req, res) => {
     try {
-        const result = await CategoryModel.find({});
-        if(result.length === 0) {return res.status(400).json({message: 'Category is empty.'})}
-        return res.status(200).json({
+
+        const {sort, search, isActive} = req.query;
+        let query = {};
+        let sortOption = {};
+
+        //Sort newest and oldest
+        if(sort === "newest"){
+            sortOption = {createdAt : - 1}
+        }
+        if(sort === "oldest"){
+            sortOption = {createdAt : 1}
+        }
+
+        //Search
+        if(search){
+            query.name = {$regex:search, $options:"i"}
+        }
+
+        //find isActive
+        if(isActive === "true"){
+            query.isActive = true;
+        }
+
+       const page = parseInt(req.query.page) || 1;
+       const limit = parseInt(req.query.limit) || 10;
+       const category = await CategoryModel.paginate(
+        query,
+        {
+            sort:sortOption,
+            page,
+            limit
+        }
+       );
+
+       return res.status(200).json({
             success: true,
-            message : 'Get all list categories',
-            total_categories: result.length,
-            data: result
-        });
+            ...category
+       })
     } catch (error) {
-        return res.status(500).json({message: 'Server internal error', error: error.message});
+        return res.json(error.message);
     }
 }
 
-export const search = async (req, res) => {
-    try {
-        const id = req.params.id;
-        const result = await CategoryModel.findById(id);
-
-        if(!result) {return res.status(404).json({message: 'Category not found.'})}
-
-        return res.status(200).json({
-            success : true,
-            message: 'Category found.',
-            data : result
-        });
-
-    } catch (error) {
-        return res.status(500).json({message: 'Server internal error', error: error.message});
-    }
-}
 
 export const update = async (req, res) => {
     try {
@@ -80,6 +99,16 @@ export const update = async (req, res) => {
 export const destroy = async (req, res) => {
     try {
         const id = req.params.id;
+
+        const productCount = await ProductModel.countDocuments({category_id:id});
+        
+        if(productCount > 0 ){
+            return res.status(400).json({
+                success: false,
+                message: "You cannot delete category, because product are using it."
+            })
+        }
+
         const result = await CategoryModel.findByIdAndDelete(id);
         
         if(!result){return res.status(404).json({message: 'Category not found.'})}
@@ -91,6 +120,6 @@ export const destroy = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({message: 'Server internal error'});
+        return res.json(error.message);
     }
 }
