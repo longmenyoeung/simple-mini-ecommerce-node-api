@@ -1,14 +1,15 @@
 import mongoose from "mongoose";
 import CategoryModel from "../models/CategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
+import ApiError from "../utils/ApiError.js";
 
 
-export const create = async (req, res) => {
+export const create = async (req, res, next) => {
     try {
         const {name, description} = req.body;
 
         const categoryExisted = await CategoryModel.findOne({name});
-        if(categoryExisted){return res.status(400).json({message: "Category name already existed."})}
+        if(categoryExisted){throw new ApiError(400, "Category name already existed.")}
 
         const category = await CategoryModel.create({name, description});
 
@@ -19,12 +20,12 @@ export const create = async (req, res) => {
         });
 
     } catch (error) {
-        return res.json(error.message)
+        next(error)
     }
 }
 
 
-export const getlist = async (req, res) => {
+export const getlist = async (req, res, next) => {
     try {
 
         const {sort, search, isActive} = req.query;
@@ -65,22 +66,22 @@ export const getlist = async (req, res) => {
             ...category
        })
     } catch (error) {
-        return res.json(error.message);
+        next(error)
     }
 }
 
 
-export const update = async (req, res) => {
+export const update = async (req, res, next) => {
     try {
         const {name, description, isActive}  = req.body;
         const {id} = req.params;
         const validated = {name, description, isActive};
 
 
-        if(!mongoose.Types.ObjectId.isValid(id)){return res.status(400).json({message: "Invalid ID format."})}
+        if(!mongoose.Types.ObjectId.isValid(id)){throw new ApiError(400, "Invalid ID format provided.")}
 
         const category = await CategoryModel.findOne({name:validated.name});
-        if(category) {return res.status(400).json({message: "Category name already existed."})}
+        if(category) {throw new ApiError(400, "Category name already existed.")}
 
 
         const result = await CategoryModel.findByIdAndUpdate(
@@ -91,7 +92,7 @@ export const update = async (req, res) => {
                 runValidators : true
             }
         );
-        if(!result) {return res.status(404).json({message: 'Category not found.'})}
+        if(!result) {throw new ApiError(404, "Category not found")}
 
 
         return res.status(200).json({
@@ -100,27 +101,28 @@ export const update = async (req, res) => {
             data : result
         })
     } catch (error) {
-        return res.json(error.message);
+        next(error)
     }
 }
 
-export const destroy = async (req, res) => {
+export const destroy = async (req, res, next) => {
     try {
         const id = req.params.id;
+
+        if(!mongoose.Types.ObjectId.isValid(id)){
+            throw new ApiError(400, "Invalid ID format provided.")
+        }
 
         const productCount = await ProductModel.countDocuments({category_id:id});
         
         if(productCount > 0 ){
-            return res.status(400).json({
-                success: false,
-                message: "You cannot delete category, because product are using it."
-            })
+            throw new ApiError(400, "You cannot delete category, because product are using it.")
         }
 
         const result = await CategoryModel.findByIdAndDelete(id);
         
-        if(!result){return res.status(404).json({message: 'Category not found.'})}
-
+        if(!result){ throw new ApiError(404, "Category not found.")}
+        
         res.status(200).json({
             success: true,
             message:' Category deleted successfully.',
@@ -128,6 +130,6 @@ export const destroy = async (req, res) => {
         });
 
     } catch (error) {
-        return res.json(error.message);
+       next(error)
     }
 }
