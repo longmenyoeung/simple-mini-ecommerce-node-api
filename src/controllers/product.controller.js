@@ -1,7 +1,8 @@
 import CategoryModel from "../models/CategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
+import ApiError from "../utils/ApiError.js";
 
-export const getlistProduct = async (req, res) => {
+export const getlistProduct = async (req, res, next) => {
     try {
         
         const {sort,search} = req.query;
@@ -67,15 +68,15 @@ export const getlistProduct = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-           ...products
+            ...products
         });
 
     } catch (error) {
-        return res.json(error.message)
+        next(error)
     }
 };
 
-export const create = async (req, res) => {
+export const create = async (req, res, next) => {
     try {
         const { name, category_id, description, price, stock } = req.body;
 
@@ -90,7 +91,7 @@ export const create = async (req, res) => {
         const category = await CategoryModel.findById(category_id);
 
         if (!category) {
-            return res.status(400).json({ message: "Select invalid category." });
+            throw new ApiError(400, "Select invalid category.");
         }
 
         return res.status(201).json({
@@ -99,14 +100,12 @@ export const create = async (req, res) => {
             data: product,
         });
     } catch (error) {
-        return res
-            .status(500)
-            .josn({ message: "Server internal error", error: error.message });
+        next(error);
     }
 };
 
 
-export const update = async (req, res) => {
+export const update = async (req, res, next) => {
     try {
         const { name, category_id, description, price, stock } = req.body;
         const validated = { name, category_id, description, price, stock };
@@ -117,14 +116,12 @@ export const update = async (req, res) => {
             { new: true, runValidators: true },
         ).populate({path:'category_id', select:'name'});
         if (!product) {
-            return res.status(404).json({ message: "Product not found." });
+            throw new ApiError(404, 'Product not found.')
         }
 
         const category = await CategoryModel.findById(category_id);
         if (!category) {
-            return res
-                .status(400)
-                .json({ message: "Please select invalid category." });
+            throw new ApiError(404, "Category not found.")
         }
 
         return res.status(200).json({
@@ -133,19 +130,17 @@ export const update = async (req, res) => {
             data: product,
         });
     } catch (error) {
-        return res
-            .status(500)
-            .json({ message: "Server internal error", error: error.message });
+        next(error);
     }
 };
 
-export const destroy = async (req, res) => {
+export const destroy = async (req, res, next) => {
     try {
         const id = req.params.id;
         const product = await ProductModel.findByIdAndDelete(id);
 
         if (!product) {
-            res.status(404).json({ message: "Product not found" });
+            throw new ApiError(404, "Product not found.")
         }
 
         return res.status(200).json({
@@ -154,9 +149,7 @@ export const destroy = async (req, res) => {
             data: product,
         });
     } catch (error) {
-        return res
-            .status(500)
-            .json({ message: "Server internal error", error: error.message });
+        next(error)
     }
 };
 
