@@ -1,4 +1,3 @@
-import path from "path"
 import multer from "multer"
 import ApiError from "../utils/ApiError.js";
 import cloudinary from 'cloudinary';
@@ -12,9 +11,9 @@ cloudinary.config({
 
 //handle upload
 export async function handleUpload(file) {
-   const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
-   const result = await cloudinary.uploader.upload(fileBase64, {
-        resource_type: "image",
+    const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+    const result = await cloudinary.uploader.upload(fileBase64, {
+        resource_type: "image"
     });
 
   return result;
