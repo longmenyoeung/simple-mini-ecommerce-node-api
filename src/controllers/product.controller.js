@@ -80,19 +80,23 @@ export const create = async (req, res, next) => {
     try {
         const { name, category_id, description, price, stock } = req.body;
 
+        //handle images file
+        const images = req.files.map(file => file.filename);
+        
+        const category = await CategoryModel.findById(category_id);
+        
+        if (!category) {
+            throw new ApiError(400, "Select invalid category.");
+        }
+
         const product = await ProductModel.create({
             name,
             category_id,
             description,
             price,
             stock,
+            images
         });
-
-        const category = await CategoryModel.findById(category_id);
-
-        if (!category) {
-            throw new ApiError(400, "Select invalid category.");
-        }
 
         return res.status(201).json({
             success: true,
@@ -103,7 +107,6 @@ export const create = async (req, res, next) => {
         next(error);
     }
 };
-
 
 export const update = async (req, res, next) => {
     try {
@@ -148,6 +151,7 @@ export const destroy = async (req, res, next) => {
             message: "Product deleted successfully",
             data: product,
         });
+
     } catch (error) {
         next(error)
     }
