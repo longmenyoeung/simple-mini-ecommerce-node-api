@@ -1,3 +1,4 @@
+import { handleUpload } from "../middleware/Upload.js";
 import CategoryModel from "../models/CategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
 import ApiError from "../utils/ApiError.js";
@@ -80,14 +81,24 @@ export const create = async (req, res, next) => {
     try {
         const { name, category_id, description, price, stock } = req.body;
 
-        //handle images file
-        const images = req.files.map(file => file.filename);
+      
         
         const category = await CategoryModel.findById(category_id);
         
         if (!category) {
             throw new ApiError(400, "Select invalid category.");
-        }
+        } 
+
+        
+       
+        // Upload images to Cloudinary
+        const uploadedImages = await Promise.all(
+            req.files.map(file => handleUpload(file))
+        );
+
+        const images = uploadedImages.map(
+            image => image.secure_url
+        );
 
         const product = await ProductModel.create({
             name,
