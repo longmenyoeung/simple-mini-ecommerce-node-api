@@ -2,16 +2,24 @@ import mongoose from "mongoose";
 import CategoryModel from "../models/CategoryModel.js";
 import ProductModel from "../models/ProductModel.js";
 import ApiError from "../utils/ApiError.js";
+import { handleUpload } from "../middleware/Upload.js";
 
 
 export const create = async (req, res, next) => {
     try {
         const {name, description} = req.body;
+        
+        if(!req.file){
+            throw new ApiError(400, "file is required.");
+        }
 
         const categoryExisted = await CategoryModel.findOne({name});
         if(categoryExisted){throw new ApiError(400, "Category name already existed.")}
 
-        const category = await CategoryModel.create({name, description});
+        
+        const uploadedImages = await handleUpload(req.file);
+        
+        const category = await CategoryModel.create({name, description, avata:uploadedImages.secure_url});
 
         return res.status(201).json({
             succcess: true, 

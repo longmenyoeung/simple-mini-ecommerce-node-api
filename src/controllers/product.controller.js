@@ -80,16 +80,12 @@ export const getlistProduct = async (req, res, next) => {
 export const create = async (req, res, next) => {
     try {
         const { name, category_id, description, price, stock } = req.body;
-
-      
         
         const category = await CategoryModel.findById(category_id);
         
         if (!category) {
             throw new ApiError(400, "Select invalid category.");
         } 
-
-        
        
         // Upload images to Cloudinary
         const uploadedImages = await Promise.all(
