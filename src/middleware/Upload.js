@@ -4,9 +4,9 @@ import cloudinary from 'cloudinary';
 
 //config cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET,
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.API_KEY,
+    api_secret: process.env.API_SECRET,
 });
 
 //handle upload
@@ -16,7 +16,7 @@ export async function handleUpload(file) {
         resource_type: "image"
     });
 
-  return result;
+    return result;
 }
 
 

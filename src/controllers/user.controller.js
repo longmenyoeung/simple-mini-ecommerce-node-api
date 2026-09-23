@@ -69,6 +69,31 @@ const login = async (req, res,next) => {
             }
         )
 
+        //generate new refresh token with cookies
+        const refreshToken  = jwt.sign(
+           {
+             sub:user._id,
+            email:user.email
+           },
+           process.env.SECRET_REFRESH_JWT,
+           {
+            expiresIn: '7d'
+           }
+            
+        )   
+
+        //update new refresh token in db
+        user.refreshtoken = refreshToken;
+        await user.save();
+
+        //set cookie
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000 //7 days in miliseconds
+        });
+
         return res.status(200).json({
             success: true,
             token: accessToken
@@ -204,6 +229,34 @@ const deleteUser = async (req, res, next) => {
    }
     
 }
+
+const logout = async (req, res, next) => {
+    try {
+
+        //clear cooki
+        res.clearCookie();
+
+        const user = await UserModel.findByIdAndUpdate(
+            req.user._id,
+            {refreshtoken: null},
+            { new: true}
+        );
+
+        if(!user){
+            throw new ApiError(404, "User not found.")
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Logout successfully."
+        })
+
+        
+    } catch (error) {
+        next(error);
+    }
+}
+
 
 export {
     register,

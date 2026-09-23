@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     password: {type:String, trim:true, min:6, required:true},
     isActive: {type: Boolean, default:true},
     profile: {type:String, default:null},
-    role:{type:String, enum:["admin", "user"], default: 'user'}
+    role:{type:String, enum:["admin", "user"], default: 'user'},
+    refreshtoken : {type:String}
 },{
     timestamps: true,
     collection: 'users'
