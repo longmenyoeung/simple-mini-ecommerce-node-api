@@ -10,6 +10,7 @@ import productRoute from './routes/product.route.js';
 import reviewRoute from './routes/review.route.js';
 import { authJwt } from './middleware/AuthMiddleware.js';
 import errorHandler from './middleware/ErrorHandler.js';
+import cookieParser from 'cookie-parser';
 
 
 //middleware
@@ -17,6 +18,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(cors());
+app.use(cookieParser())
 app.use(morgan('combined'));
 
 

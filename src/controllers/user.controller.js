@@ -52,9 +52,8 @@ const login = async (req, res,next) => {
         const passwordCompare = await bcrypt.compare(password, user.password);
         if(!passwordCompare){throw new ApiError(400, "Email or password incorrect.")}
 
-        //if account isActive : false
-        const accountIsActive = await UserModel.findOne({isActive:false});
-        if(accountIsActive){throw new ApiError(400, "Account has been deactivated. please contact to support.")}
+       //checking isActive
+       if(!user.isActive){throw new ApiError(400, "Account is not active. Please contact to support.")}
 
         //generate token
         const accessToken = jwt.sign(
@@ -80,16 +79,19 @@ const login = async (req, res,next) => {
             expiresIn: '7d'
            }
             
-        )   
+        )  
+
+        //hash refresh token
+        const hashedRefreshtoken = await bcrypt.hash(refreshToken, 10);
 
         //update new refresh token in db
-        user.refreshtoken = refreshToken;
+        user.refreshtoken = hashedRefreshtoken;
         await user.save();
 
         //set cookie
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: true,
+            secure:  process.env.NODE_ENV === "production",
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000 //7 days in miliseconds
         });
@@ -232,30 +234,72 @@ const deleteUser = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
     try {
+        const token = req.cookies.refreshToken;
 
-        //clear cooki
-        res.clearCookie();
+        if (!token) {
+            throw new ApiError(
+                401,
+                "Unauthorized: No token provided."
+            );
+        }
 
-        const user = await UserModel.findByIdAndUpdate(
-            req.user._id,
-            {refreshtoken: null},
-            { new: true}
+        const decoded = jwt.verify(
+            token,
+            process.env.SECRET_REFRESH_JWT
         );
 
-        if(!user){
-            throw new ApiError(404, "User not found.")
+        const user = await UserModel
+            .findById(decoded.sub)
+            .select("refreshtoken");
+
+        if (!user) {
+            throw new ApiError(
+                401,
+                "Unauthorized: Invalid token."
+            );
         }
+
+        // Check refresh token exists in database
+        if (!user.refreshtoken) {
+            throw new ApiError(
+                401,
+                "Unauthorized: Refresh token not found."
+            );
+        }
+
+        // Compare token with hashed token
+        const isMatch = await bcrypt.compare(
+            token,
+            user.refreshtoken
+        );
+
+        if (!isMatch) {
+            throw new ApiError(
+                401,
+                "Unauthorized: Invalid refresh token."
+            );
+        }
+
+        // Clear refresh token from DB
+        user.refreshtoken = null;
+        await user.save();
+
+        // Clear cookie
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict"
+        });
 
         return res.status(200).json({
             success: true,
-            message: "Logout successfully."
-        })
+            message: "User logged out successfully."
+        });
 
-        
     } catch (error) {
         next(error);
     }
-}
+};
 
 
 export {
@@ -264,5 +308,6 @@ export {
     getlistUser,
     searchUserById,
     updateCurrectUser,
-    deleteUser
+    deleteUser,
+    logout
 }
