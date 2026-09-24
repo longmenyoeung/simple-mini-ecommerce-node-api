@@ -1,6 +1,7 @@
-import {body} from 'express-validator';
+import {body, param} from 'express-validator';
 import  validate  from '../middleware/Validate.js';
 
+//create and update
 export const productValidate = [
     body('name')
     .trim()
@@ -27,5 +28,14 @@ export const productValidate = [
     body('images.*')
     .optional()
     .isString().withMessage("Image must be a string."),
+    validate
+]
+
+
+// delete
+export const deleteProductValidate = [
+    param('id')
+    .isMongoId()
+    .notEmpty().withMessage("Product ID is required."),
     validate
 ]
