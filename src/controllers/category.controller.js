@@ -81,12 +81,22 @@ export const getlist = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
     try {
-        const {name, description, isActive}  = req.body;
+        const {name, description, isActive,avata}  = req.body;
         const {id} = req.params;
-        const validated = {name, description, isActive};
+        const validated = {name, description, isActive, avata};
 
 
         if(!mongoose.Types.ObjectId.isValid(id)){throw new ApiError(400, "Invalid ID format provided.")}
+
+
+        //update avata
+        if(req.file){
+            const uploadedImage = await handleUpload(req.file);
+            validated.avata = uploadedImage.secure_url;
+        }else{
+            validated.avata = null;
+        }
+
 
         const category = await CategoryModel.findOne({name:validated.name});
         if(category) {throw new ApiError(400, "Category name already existed.")}

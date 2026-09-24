@@ -6,8 +6,8 @@ import { categoryValidate, deleteCategoryValidate } from "../validator/category.
 const categoryRoute = express.Router();
 
 categoryRoute.get('/', getlist);
-categoryRoute.post('/',authorizeRole("admin"), categoryValidate,upload.single('avata'), create);
-categoryRoute.put('/:id',authorizeRole("admin"),categoryValidate, update);
+categoryRoute.post('/',authorizeRole("admin"),upload.single('avata'), create);
+categoryRoute.put('/:id',authorizeRole("admin"),upload.single('avata'), update);
 categoryRoute.delete('/:id',authorizeRole("admin"), deleteCategoryValidate, destroy);
 
 
