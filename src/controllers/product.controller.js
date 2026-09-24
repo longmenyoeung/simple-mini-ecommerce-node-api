@@ -117,22 +117,32 @@ export const create = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
     try {
-        const { name, category_id, description, price, stock } = req.body;
-        const validated = { name, category_id, description, price, stock };
+        // const { name, category_id, description, price, stock } = req.body;
+        // const validated = { name, category_id, description, price, stock };
+
+        // Upload images to Cloudinary
+        const uploadedImages = await Promise.all(
+            req.files.map(file => handleUpload(file))
+        );
+
+        const images = uploadedImages.map(
+            image => image.secure_url 
+        );
 
         const product = await ProductModel.findByIdAndUpdate(
             req.params.id,
-            validated,
+            {images, ...req.body},
             { new: true, runValidators: true },
         ).populate({path:'category_id', select:'name'});
+    
         if (!product) {
             throw new ApiError(404, 'Product not found.')
         }
 
-        const category = await CategoryModel.findById(category_id);
-        if (!category) {
-            throw new ApiError(404, "Category not found.")
-        }
+        // const category = await CategoryModel.findById(category_id);
+        // if (!category) {
+        //     throw new ApiError(404, "Category not found.")
+        // }
 
         return res.status(200).json({
             success: true,

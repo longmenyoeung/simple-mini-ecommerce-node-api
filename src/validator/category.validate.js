@@ -3,7 +3,7 @@ import validate from "../middleware/Validate.js";
 
 
 
-//Create and Update
+//Create and Update form form-input at postman
 export const categoryValidate = [
     body('name')
     .trim()

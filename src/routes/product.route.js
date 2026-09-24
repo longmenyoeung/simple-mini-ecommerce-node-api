@@ -11,8 +11,8 @@ import { deleteProductValidate, productValidate } from "../validator/product.val
 const productRoute = express.Router();
 
 productRoute.get("/", getlistProduct);
-productRoute.post("/",authorizeRole("admin"),productValidate, upload.array("images", 5), create);
-productRoute.put("/:id",authorizeRole("admin"), productValidate, upload.array("images", 5), update);
+productRoute.post("/",authorizeRole("admin"), upload.array("images", 5), create);
+productRoute.put("/:id",authorizeRole("admin"), upload.array("images", 5), update);
 productRoute.delete("/:id",authorizeRole("admin"), deleteProductValidate, destroy);
 
 export default productRoute; 
